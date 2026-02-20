@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好き勝手レイディオ - 謎解きチャレンジ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange-main: #F5A623;
+    --orange-dark: #E8941A;
+    --orange-light: #FFD080;
+    --orange-pale: #FFF3E0;
+    --green-main: #4CAF50;
+    --green-dark: #388E3C;
+    --green-light: #81C784;
+    --green-pale: #E8F5E9;
+    --bg: #FFFBF5;
+    --text: #3E2C1A;
+    --text-light: #8B7355;
+    --locked: #C8BDB0;
+    --locked-bg: #EEEAE4;
+    --error: #E53935;
+    --success: #2E7D32;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background decoration */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -120px;
+    right: -120px;
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, var(--orange-light) 0%, transparent 70%);
+    opacity: 0.3;
+    z-index: -1;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -100px;
+    left: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--green-light) 0%, transparent 70%);
+    opacity: 0.25;
+    z-index: -1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header-logo {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green-main);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .header-title {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 28px;
+    color: var(--orange-dark);
+    text-shadow: 2px 2px 0 var(--orange-light);
+    margin-bottom: 6px;
+  }
+
+  .header-subtitle {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 400;
+  }
+
+  .header-divider {
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--orange-main), var(--green-main));
+    border-radius: 2px;
+    margin: 20px auto 0;
+  }
+
+  /* Progress */
+  .progress-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    margin-bottom: 10px;
+  }
+
+  .progress-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--locked);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .progress-dot.cleared {
+    background: var(--green-main);
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+  }
+
+  .progress-dot.current {
+    background: var(--orange-main);
+    transform: scale(1.3);
+    box-shadow: 0 0 10px rgba(245, 166, 35, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(245, 166, 35, 0.4); }
+    50% { box-shadow: 0 0 16px rgba(245, 166, 35, 0.7); }
+  }
+
+  /* Puzzle list */
+  .puzzle-list {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Puzzle button */
+  .puzzle-btn {
+    width: 100%;
+    border: none;
+    border-radius: 16px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+
+  /* Locked state */
+  .puzzle-btn.locked {
+    background: var(--locked-bg);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .puzzle-btn.locked .puzzle-num {
+    background: var(--locked);
+    color: #fff;
+  }
+
+  .puzzle-btn.locked .puzzle-label {
+    color: var(--locked);
+  }
+
+  .puzzle-btn.locked .puzzle-lock {
+    color: var(--locked);
+  }
+
+  /* Available state */
+  .puzzle-btn.available {
+    background: linear-gradient(135deg, #FFF8EE, #FFF3E0);
+    border: 2px solid var(--orange-main);
+    box-shadow: 0 4px 15px rgba(245, 166, 35, 0.15);
+  }
+
+  .puzzle-btn.available:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 166, 35, 0.25);
+  }
+
+  .puzzle-btn.available:active {
+    transform: translateY(0);
+  }
+
+  .puzzle-btn.available .puzzle-num {
+    background: var(--orange-main);
+    color: #fff;
+  }
+
+  .puzzle-btn.available .puzzle-label {
+    color: var(--orange-dark);
+    font-weight: 700;
+  }
+
+  /* Cleared state */
+  .puzzle-btn.cleared {
+    background: linear-gradient(135deg, #F1F8F1, var(--green-pale));
+    border: 2px solid var(--green-main);
+  }
+
+  .puzzle-btn.cleared .puzzle-num {
+    background: var(--green-main);
+    color: #fff;
+  }
+
+  .puzzle-btn.cleared .puzzle-label {
+    color: var(--green-dark);
+  }
+
+  /* Final puzzle button */
+  .puzzle-btn.final.available {
+    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+    border: 2px solid var(--orange-dark);
+    box-shadow: 0 4px 20px rgba(245, 166, 35, 0.25);
+  }
+
+  .puzzle-btn.final.locked {
+    background: var(--locked-bg);
+  }
+
+  .puzzle-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+
+  .puzzle-label {
+    font-size: 16px;
+    flex-grow: 1;
+    transition: all 0.3s ease;
+  }
+
+  .puzzle-lock {
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+
+  .puzzle-btn.cleared .puzzle-lock {
+    color: var(--green-main);
+  }
+
+  .puzzle-btn.available .puzzle-lock {
+    color: var(--orange-main);
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(62, 44, 26, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(62, 44, 26, 0.2);
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal-header {
+    padding: 28px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-puzzle-num {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    background: var(--orange-main);
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+
+  .modal-puzzle-num.final-num {
+    background: linear-gradient(135deg, var(--orange-main), var(--green-main));
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--orange-pale);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-light);
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: var(--orange-light);
+    color: var(--text);
+  }
+
+  .modal-body {
+    padding: 24px 28px 28px;
+  }
+
+  .modal-question {
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 28px;
+    font-weight: 700;
+  }
+
+  .modal-hint {
+    font-size: 13px;
+    color: var(--text-light);
+    background: var(--orange-pale);
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .modal-hint span {
+    font-weight: 700;
+    color: var(--orange-dark);
+  }
+
+  .answer-form {
+    display: flex;
+    gap: 10px;
+  }
+
+  .answer-input {
+    flex-grow: 1;
+    border: 2px solid #E0D8CE;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 18px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.3s;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  .answer-input:focus {
+    border-color: var(--orange-main);
+  }
+
+  .answer-input::placeholder {
+    color: var(--locked);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 14px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 400;
+  }
+
+  .answer-submit {
+    border: none;
+    background: var(--orange-main);
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .answer-submit:hover {
+    background: var(--orange-dark);
+    transform: translateY(-1px);
+  }
+
+  .answer-submit:active {
+    transform: translateY(0);
+  }
+
+  .answer-feedback {
+    margin-top: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    min-height: 20px;
+    transition: all 0.3s;
+  }
+
+  .answer-feedback.error {
+    color: var(--error);
+    animation: shake 0.4s ease;
+  }
+
+  .answer-feedback.success {
+    color: var(--success);
+    animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  @keyframes successPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Cleared modal state */
+  .modal-cleared {
+    text-align: center;
+    padding: 20px 0 0;
+  }
+
+  .modal-cleared .cleared-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .modal-cleared .cleared-answer {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: var(--green-main);
+    letter-spacing: 3px;
+  }
+
+  .modal-cleared .cleared-text {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-top: 8px;
+  }
+
+  /* Final answer display */
+  .final-answer-display {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .final-answer-display .final-word {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    background: linear-gradient(135deg, var(--orange-main), var(--green-main));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 5px;
+  }
+
+  /* Letter boxes for final puzzle */
+  .letter-boxes {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .letter-box {
+    width: 48px;
+    height: 56px;
+    border: 2px solid #E0D8CE;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    transition: all 0.3s;
+  }
+
+  .letter-box.revealed {
+    border-color: var(--green-main);
+    background: var(--green-pale);
+  }
+
+  .letter-box .box-num {
+    font-size: 10px;
+    color: var(--text-light);
+    font-weight: 700;
+  }
+
+  .letter-box .box-letter {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--green-dark);
+  }
+
+  /* Intro screen */
+  .intro-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .intro-card {
+    background: #FFFDF8;
+    border-radius: 20px;
+    padding: 36px 32px;
+    max-width: 480px;
+    width: calc(100% - 40px);
+    margin: 20px auto 40px;
+    box-shadow: 0 8px 30px rgba(62, 44, 26, 0.1);
+    text-align: center;
+    animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .intro-title {
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--orange-dark);
+    margin-bottom: 16px;
+  }
+
+  .intro-divider {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange-main), var(--green-main));
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+
+  .intro-body {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--text);
+    text-align: left;
+    margin-bottom: 32px;
+  }
+
+  .intro-btn {
+    border: none;
+    background: var(--orange-main);
+    color: #fff;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 18px;
+    padding: 14px 48px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(245, 166, 35, 0.3);
+  }
+
+  .intro-btn:hover {
+    background: var(--orange-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 166, 35, 0.4);
+  }
+
+  .intro-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Main screen */
+  .main-screen {
+    animation: fadeIn 0.5s ease;
+  }
+
+  /* Timer */
+  .timer {
+    text-align: center;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--text-light);
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+
+  .timer.stopped {
+    color: var(--green-main);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: var(--locked);
+  }
+
+  /* Ending popup */
+  .ending-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(62, 44, 26, 0.7);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    cursor: pointer;
+  }
+
+  .ending-overlay.active {
+    opacity: 1;
+  }
+
+  .ending-popup {
+    text-align: center;
+  }
+
+  .ending-text {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 36px;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(245, 166, 35, 0.8), 0 0 60px rgba(245, 166, 35, 0.4);
+    animation: endingAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes endingAppear {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .ending-letter-btn {
+    margin-top: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    background: transparent;
+    color: #fff;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 12px 32px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    animation: endingAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+  }
+
+  .ending-letter-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #fff;
+  }
+
+  /* Letter overlay */
+  .letter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(62, 44, 26, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 300;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .letter-overlay.active {
+    opacity: 1;
+  }
+
+  .letter-card {
+    background: #FFFDF8;
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 540px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(62, 44, 26, 0.25);
+    animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-align: center;
+  }
+
+  .letter-title {
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--orange-dark);
+    margin-bottom: 16px;
+  }
+
+  .letter-divider {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange-main), var(--green-main));
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+
+  .letter-body {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--text);
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .letter-signature {
+    text-align: right;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 28px;
+  }
+
+  .letter-close-btn {
+    border: none;
+    background: var(--orange-main);
+    color: #fff;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 28px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .letter-close-btn:hover {
+    background: var(--orange-dark);
+  }
+
+  .letter-btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .letter-x-btn {
+    border: none;
+    background: #000;
+    color: #fff;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 28px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .letter-x-btn:hover {
+    background: #333;
+  }
+</style>
+</head>
+<body>
+
+<!-- Intro screen -->
+<div class="intro-screen" id="introScreen">
+  <div class="header">
+    <div class="header-logo">Sukikatte Radio</div>
+    <div class="header-title">謎解きチャレンジ</div>
+    <div class="header-divider"></div>
+  </div>
+  <div class="intro-card">
+    <div class="intro-title">はじめに</div>
+    <div class="intro-divider"></div>
+    <div class="intro-body">
+      ようこそ。<br><br>
+      ポッドキャスト番組「好き勝手レイディオ」シーズン3 #8にてゆうかっぺが挑んだ謎解きチャレンジです。<br><br>
+      あなたもゆうかっぺと同じように、はじめちゃんからの挑戦に挑みますか？
+    </div>
+    <button class="intro-btn" id="introBtn">挑む</button>
+  </div>
+</div>
+
+<!-- Main puzzle screen -->
+<div class="main-screen" id="mainScreen" style="display:none">
+  <div class="header">
+    <div class="header-logo">Sukikatte Radio</div>
+    <div class="header-title">謎解きチャレンジ</div>
+    <div class="header-subtitle">すべての謎を解き明かせ</div>
+    <div class="header-divider"></div>
+  </div>
+
+  <div class="progress-container" id="progressDots"></div>
+
+  <div class="timer" id="timer">00:00</div>
+
+  <div class="puzzle-list" id="puzzleList"></div>
+
+  <div class="footer">好き勝手レイディオ</div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-puzzle-num" id="modalNum"></div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const puzzles = [
+  {
+    num: 1,
+    label: '第1の謎',
+    question: 'クリームにあってバターにない。\nキャンディーにあってガムにない。\nホッケーにあってサッカーにない。\n\n「ある」から連想されるアルファベット3文字を答えよ。',
+    answer: 'ICE',
+    hint: 'アルファベット3文字',
+    letterCount: 3
+  },
+  {
+    num: 2,
+    label: '第2の謎',
+    question: 'ある賢者は逆立ちする神の姿を、\nある動物の姿に例えて笑った。\n\nある動物とはなにか。アルファベット3文字で答えよ。',
+    answer: 'DOG',
+    hint: 'アルファベット3文字',
+    letterCount: 3
+  },
+  {
+    num: 3,
+    label: '第3の謎',
+    question: '東西南北をあちこち駆け巡る、\n人々が毎日知りたがるもの。\n\nアルファベット4文字で答えよ。',
+    answer: 'NEWS',
+    hint: 'アルファベット4文字',
+    letterCount: 4
+  },
+  {
+    num: 4,
+    label: '第4の謎',
+    question: '<center>Fe → I\nAg → S\nW → T</center>\n\nある法則で変換するとき、Auは？\nアルファベット4文字で答えよ。',
+    answer: 'GOLD',
+    hint: 'アルファベット4文字',
+    letterCount: 4
+  },
+  {
+    num: 5,
+    label: '第5の謎',
+    question: '<div style="display:flex;align-items:center;justify-content:center;gap:24px"><span style="font-size:36px;line-height:1">S</span><span>M → V → ◻ → M → J → S → U → N</span></div>\n\n◻ に入るモノは何か。アルファベット5文字で答えよ。',
+    answer: 'EARTH',
+    hint: 'アルファベット5文字',
+    letterCount: 5
+  },
+  {
+    num: 6,
+    label: '第6の謎',
+    question: '騎士が兜を脱ぐのはいつ？\n\nアルファベット5文字で答えよ。',
+    answer: 'NIGHT',
+    hint: 'アルファベット5文字',
+    letterCount: 5
+  },
+  {
+    num: 'FINAL',
+    label: '最後の謎',
+    question: '<center style="font-family:Fredoka,sans-serif;font-size:32px;letter-spacing:8px;color:var(--orange-dark)">５ ６ ２ １ ３ ４</center>',
+    answer: 'ENDING',
+    hint: null,
+    letterCount: 6,
+    isFinal: true
+  }
+];
+
+// State
+let clearedPuzzles = new Set();
+
+function getState() {
+  const saved = localStorage.getItem('sukikatte_puzzle_state');
+  if (saved) {
+    clearedPuzzles = new Set(JSON.parse(saved));
+  }
+}
+
+function saveState() {
+  localStorage.setItem('sukikatte_puzzle_state', JSON.stringify([...clearedPuzzles]));
+}
+
+function isUnlocked(index) {
+  if (index === 0) return true;
+  return clearedPuzzles.has(index - 1);
+}
+
+function renderProgress() {
+  const container = document.getElementById('progressDots');
+  container.innerHTML = '';
+  puzzles.forEach((p, i) => {
+    // Hide final dot until all 6 puzzles are cleared
+    if (p.isFinal && !clearedPuzzles.has(5)) return;
+
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    if (clearedPuzzles.has(i)) {
+      dot.classList.add('cleared');
+    } else if (isUnlocked(i) && !clearedPuzzles.has(i)) {
+      dot.classList.add('current');
+    }
+    container.appendChild(dot);
+  });
+}
+
+function renderPuzzleList() {
+  const list = document.getElementById('puzzleList');
+  list.innerHTML = '';
+
+  puzzles.forEach((p, i) => {
+    const cleared = clearedPuzzles.has(i);
+    const unlocked = isUnlocked(i);
+    const isFinal = p.isFinal;
+
+    // Hide final puzzle until all 6 puzzles are cleared
+    if (isFinal && !clearedPuzzles.has(5)) return;
+
+    const btn = document.createElement('button');
+
+    btn.className = 'puzzle-btn';
+    if (isFinal) btn.classList.add('final');
+
+    if (cleared) {
+      btn.classList.add('cleared');
+    } else if (unlocked) {
+      btn.classList.add('available');
+    } else {
+      btn.classList.add('locked');
+    }
+
+    const numDisplay = isFinal ? '★' : p.num;
+    const lockIcon = cleared ? '✓' : (unlocked ? '→' : '🔒');
+
+    btn.innerHTML = `
+      <div class="puzzle-num">${numDisplay}</div>
+      <div class="puzzle-label">${p.label}</div>
+      <div class="puzzle-lock">${lockIcon}</div>
+    `;
+
+    btn.addEventListener('click', () => {
+      if (!unlocked && !cleared) return;
+      openModal(i);
+    });
+
+    list.appendChild(btn);
+  });
+}
+
+function openModal(index) {
+  const p = puzzles[index];
+  const cleared = clearedPuzzles.has(index);
+  const overlay = document.getElementById('modalOverlay');
+  const modalNum = document.getElementById('modalNum');
+  const modalBody = document.getElementById('modalBody');
+
+  if (p.isFinal) {
+    modalNum.textContent = '★ FINAL';
+    modalNum.classList.add('final-num');
+  } else {
+    modalNum.textContent = `PUZZLE ${p.num}`;
+    modalNum.classList.remove('final-num');
+  }
+
+  if (cleared) {
+    // Show cleared state
+    const questionHtml = p.question.replace(/\n/g, '<br>');
+
+    modalBody.innerHTML = `
+      <div class="modal-question">${questionHtml}</div>
+      <div class="modal-cleared">
+        <div class="cleared-icon">🎉</div>
+        <div class="cleared-answer">${p.answer}</div>
+        <div class="cleared-text">クリア済み</div>
+      </div>
+    `;
+  } else {
+    // Show puzzle
+    const questionHtml2 = p.question.replace(/\n/g, '<br>');
+
+    modalBody.innerHTML = `
+      <div class="modal-question">${questionHtml2}</div>
+      <div class="answer-form">
+        <input type="text" class="answer-input" id="answerInput" placeholder="答えを入力" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="answer-submit" id="answerSubmit">回答</button>
+      </div>
+      <div class="answer-feedback" id="answerFeedback"></div>
+    `;
+
+    const input = document.getElementById('answerInput');
+    const submit = document.getElementById('answerSubmit');
+    const feedback = document.getElementById('answerFeedback');
+
+    const checkAnswer = () => {
+      const userAnswer = input.value.trim().toUpperCase();
+      if (!userAnswer) return;
+
+      if (userAnswer === p.answer) {
+        clearedPuzzles.add(index);
+        saveState();
+
+        if (p.isFinal) {
+          // Show ENDING popup
+          closeModal();
+          renderAll();
+          showEndingPopup();
+        } else {
+          feedback.textContent = '正解！';
+          feedback.className = 'answer-feedback success';
+          setTimeout(() => {
+            closeModal();
+            renderAll();
+          }, 1000);
+        }
+      } else {
+        // For puzzle 4 (GOLD), also hint if just 'G'
+        if (index === 3 && userAnswer === 'G') {
+          feedback.textContent = 'おしい！元の言葉をフルで答えてみて';
+          feedback.className = 'answer-feedback error';
+        } else {
+          feedback.textContent = 'キーワードが違うようです';
+          feedback.className = 'answer-feedback error';
+        }
+        input.value = '';
+        input.focus();
+      }
+    };
+
+    submit.addEventListener('click', checkAnswer);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+
+    setTimeout(() => input.focus(), 400);
+  }
+
+  overlay.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+function showEndingPopup() {
+  stopTimer();
+  const timerEl = document.getElementById('timer');
+  const finalTime = timerEl.textContent;
+  const popup = document.createElement('div');
+  popup.className = 'ending-overlay';
+  popup.innerHTML = `
+    <div class="ending-popup">
+      <div class="ending-text">エンディングです！</div>
+      <div style="color:rgba(255,255,255,0.7);font-size:16px;margin-top:12px;font-family:Fredoka,sans-serif;letter-spacing:2px">${finalTime}</div>
+      <button class="ending-letter-btn" id="endingLetterBtn">おわりに</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+  requestAnimationFrame(() => popup.classList.add('active'));
+
+  // Only close when clicking background, not the popup content
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) {
+      popup.classList.remove('active');
+      setTimeout(() => popup.remove(), 400);
+    }
+  });
+
+  document.getElementById('endingLetterBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.classList.remove('active');
+    setTimeout(() => {
+      popup.remove();
+      showLetterPopup();
+    }, 400);
+  });
+}
+
+function showLetterPopup() {
+  const letterOverlay = document.createElement('div');
+  letterOverlay.className = 'letter-overlay';
+  letterOverlay.innerHTML = `
+    <div class="letter-card">
+      <div class="letter-title">おわりに</div>
+      <div class="letter-divider"></div>
+      <div class="letter-body">
+        無事にすべて解くことができたようで、何よりです。<br><br>
+        今回のhtmlファイルは全てClaudeくんに作ってもらいました。<br>
+        今後、ARGなんかも作れたらいいなぁと思っていたので、<br>
+        AIへの指示出しのいい練習になりました。<br><br>
+        来週に向けてしっかりと体調を整えたいと思います。<br>
+        改めて、一人収録お疲れさまでした。
+      </div>
+      <div class="letter-signature">楔はじめ</div>
+      <div class="letter-btn-row">
+        <button class="letter-close-btn" id="letterCloseBtn">とじる</button>
+        <button class="letter-x-btn" id="letterXBtn">Xで報告</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(letterOverlay);
+  requestAnimationFrame(() => letterOverlay.classList.add('active'));
+
+  const closeLetterFn = (e) => {
+    if (e.target === letterOverlay || e.target.id === 'letterCloseBtn') {
+      letterOverlay.classList.remove('active');
+      setTimeout(() => letterOverlay.remove(), 400);
+    }
+  };
+  letterOverlay.addEventListener('click', closeLetterFn);
+
+  document.getElementById('letterXBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const text = encodeURIComponent(`好き勝手パズルを${finalTimeText}でクリアしました！\n#好き勝手レイディオ #好き勝手謎`);
+    window.open(`https://x.com/intent/tweet?text=${text}`, '_blank');
+  });
+}
+
+function renderAll() {
+  renderProgress();
+  renderPuzzleList();
+}
+
+// Timer
+let timerStart = null;
+let timerInterval = null;
+let timerStopped = false;
+let finalTimeText = '00:00';
+
+function startTimer() {
+  timerStart = Date.now();
+  const timerEl = document.getElementById('timer');
+  timerInterval = setInterval(() => {
+    if (timerStopped) return;
+    const elapsed = Date.now() - timerStart;
+    const mins = Math.floor(elapsed / 60000);
+    const secs = Math.floor((elapsed % 60000) / 1000);
+    timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }, 200);
+}
+
+function stopTimer() {
+  timerStopped = true;
+  clearInterval(timerInterval);
+  const timerEl = document.getElementById('timer');
+  timerEl.classList.add('stopped');
+  finalTimeText = timerEl.textContent;
+}
+
+// Init
+getState();
+renderAll();
+
+// Intro screen logic
+const introScreen = document.getElementById('introScreen');
+const mainScreen = document.getElementById('mainScreen');
+const introBtn = document.getElementById('introBtn');
+
+// If already started (has progress), skip intro
+
+introBtn.addEventListener('click', () => {
+  // Reset progress
+  clearedPuzzles = new Set();
+  localStorage.removeItem('sukikatte_puzzle_state');
+  renderAll();
+
+  introScreen.style.opacity = '1';
+  introScreen.style.transition = 'opacity 0.4s ease';
+  introScreen.style.opacity = '0';
+  setTimeout(() => {
+    introScreen.style.display = 'none';
+    mainScreen.style.display = 'block';
+    startTimer();
+  }, 400);
+});
+</script>
+
+</body>
+</html>
